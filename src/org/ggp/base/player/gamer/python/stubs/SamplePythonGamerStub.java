@@ -15,4 +15,5 @@ public final class SamplePythonGamerStub extends PythonGamer
 	protected String getPythonGamerModule() { return "sample_gamer"; }
     @Override
 	protected String getPythonGamerName() { return "SamplePythonGamer"; }
+
 }
