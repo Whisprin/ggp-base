@@ -10,6 +10,7 @@ import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
+import org.ggp.base.util.gdl.grammar.GdlPool;
 import org.ggp.base.util.logging.GamerLogger;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
@@ -37,6 +38,7 @@ public final class Tromboter extends StateMachineGamer
 	 * before the timeout.
 	 *
 	 */
+	int i = 0;
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
@@ -55,32 +57,64 @@ public final class Tromboter extends StateMachineGamer
 
 		// Log
 		StringBuilder output = new StringBuilder();
-		output.append(getRole());
+		output.append(mymachine.getRoles());
 		output.append("\n");
-		GamerLogger.emitToConsole(output.toString());
+		output.append(moves);
+		output.append("\n");
+		output.append(++i);
+		output.append("\n\n");
+		//GamerLogger.emitToConsole(output.toString());
 
 		while (true) {
 			if (System.currentTimeMillis() > timeout - 500) {
 		        break;
 			}
-			selection = mymachine.getRandomMove(getCurrentState(), getRole());
-		}
-
-
-
-		/*
-		for (Move amove:getStateMachine().getLegalMoves(getCurrentState(), getRole()) {
-			for (Role arole:getStateMachine().getRoles()) {
-			    try {
-		            MachineState finalState = mymachine.performDepthCharge(mymachine.getRandomNextState(theState, getRole(), myMove), depth);
-		            return theMachine.getGoal(finalState, getRole());
-		        } catch (Exception e) {
-		            e.printStackTrace();
-		            return 0;
-		        }
+			try {
+				List<Integer> nodeScores = new ArrayList<Integer>();
+				nodeScores.clear();
+				for (List<Move> amove:getStateMachine().getLegalJointMoves(getCurrentState())) {
+					try {
+						nodeScores.add(new Integer(getNodeScore(getStateMachine().getNextState(getCurrentState(), amove))));
+					} catch (TransitionDefinitionException e) {
+						e.printStackTrace();
+						return selection;
+					}
+				}
+				// Gegner ist am Zug
+				if(getStateMachine().getLegalMoves(getCurrentState(), getRole()).size() == 1) {
+					int myscore = Collections.min(nodeScores);
+					Move mymove = mymachine.getLegalMoves(getCurrentState(), getRole()).get(nodeScores.indexOf(myscore));
+					StringBuilder debug_output = new StringBuilder();
+					debug_output.append("myscore: ");
+					debug_output.append(myscore);
+					debug_output.append("; ");
+					debug_output.append("mymove: ");
+					debug_output.append(mymove);
+					debug_output.append("\n");
+					GamerLogger.emitToConsole(debug_output.toString());
+					return mymove;
+				} else {
+					int myscore = Collections.min(nodeScores);
+					GamerLogger.emitToConsole(getStateMachine().getLegalMoves(getCurrentState(), getRole()).get(0).toString());
+					GamerLogger.emitToConsole("\n");
+					GamerLogger.emitToConsole(new Move(GdlPool.getConstant("NOOP")).toString());
+					GamerLogger.emitToConsole("\n");
+					Move mymove = mymachine.getLegalMoves(getCurrentState(), getRole()).get(nodeScores.indexOf(myscore));
+					StringBuilder debug_output = new StringBuilder();
+					debug_output.append("myscore: ");
+					debug_output.append(myscore);
+					debug_output.append("; ");
+					debug_output.append("mymove: ");
+					debug_output.append(mymove);
+					debug_output.append("\n");
+					GamerLogger.emitToConsole(debug_output.toString());
+					return mymove;
+				}
+			} catch (MoveDefinitionException e) {
+				e.printStackTrace();
+				return selection;
 			}
 		}
-		*/
 
 		// We get the end time
 		// It is mandatory that stop<timeout
@@ -131,38 +165,44 @@ public final class Tromboter extends StateMachineGamer
 		return "Tromboter";
 	}
 
-	// This is the defaul Sample Panel
+	// This is the default Sample Panel
 	@Override
 	public DetailPanel getDetailPanel() {
 		return new SimpleDetailPanel();
 	}
 
+	private boolean first_move = true;
+
 	// Returns maximum reachable score
-	private int getMaxNodeScore(MachineState state) {
-		// TODO: return move
+	private int getNodeScore(MachineState state) {
 		if (getStateMachine().isTerminal(state)) {
 			try {
 				return getStateMachine().getGoal(state, getRole());
 			} catch (GoalDefinitionException e) {
 				e.printStackTrace();
-				return 0;
+				return -1;
 			}
 		}
 		try {
 			List<Integer> nodeScores = new ArrayList<Integer>();
+			nodeScores.clear();
 			for (List<Move> amove:getStateMachine().getLegalJointMoves(state)) {
-				//MachineState newstate = getStateMachine().performDepthCharge(getStateMachine().getNextState(state, amove), );
-				// TODO: Unterscheidung zwischen Rollen: min/max
 				try {
-					nodeScores.add(getMaxNodeScore(getStateMachine().getNextState(state, amove)));
+					nodeScores.add(new Integer(getNodeScore(getStateMachine().getNextState(state, amove))));
 				} catch (TransitionDefinitionException e) {
 					e.printStackTrace();
+					return -1;
 				}
 			}
-			return Collections.max(nodeScores);
+			// Gegner ist am Zug
+			if(getStateMachine().getLegalMoves(state, getRole()).size() == 1) {
+				return Collections.min(nodeScores);
+			} else {
+				return Collections.max(nodeScores);
+			}
 		} catch (MoveDefinitionException e) {
 			e.printStackTrace();
-			return 0;
+			return -1;
 		}
 	}
 
