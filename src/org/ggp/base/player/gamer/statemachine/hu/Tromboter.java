@@ -21,6 +21,8 @@ import org.ggp.base.util.statemachine.exceptions.MoveDefinitionException;
 import org.ggp.base.util.statemachine.exceptions.TransitionDefinitionException;
 import org.ggp.base.util.statemachine.implementation.prover.ProverStateMachine;
 
+// yeah!
+
 /**
  * SampleLegalGamer is a minimal gamer which always plays the first
  * legal move it identifies, regardless of the state of the game.
