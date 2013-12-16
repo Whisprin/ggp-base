@@ -1,0 +1,1 @@
+java -cp "bin:bin/external/Guava/guava-14.0.1.jar:bin/external/JUnit/junit-4.11.jar:bin/external/FlyingSaucer/core-renderer.jar:bin/external/JTidy/Tidy.jar:bin/external/reflections/reflections-0.9.9-RC1.jar:bin/external/javassist/javassist.jar" org/ggp/base/apps/server/Server
