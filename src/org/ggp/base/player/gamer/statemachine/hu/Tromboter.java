@@ -41,11 +41,15 @@ public final class Tromboter extends StateMachineGamer
 	int i = 0;
 
 	boolean justOneTime = true;
+	long finish_by = 0;
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
 		// We get the current start time
 		long start = System.currentTimeMillis();
+
+		finish_by = timeout - 500;
+
 		StateMachine mymachine = getStateMachine();
 
 		/**
@@ -66,13 +70,6 @@ public final class Tromboter extends StateMachineGamer
 		output.append(++i);
 		output.append("\n\n");
 		//GamerLogger.emitToConsole(output.toString());
-
-		/*
-		while (true) {
-			if (System.currentTimeMillis() > timeout - 500) {
-				break;
-			}
-		}*/
 
 		try {
 			List<Integer> nodeScores = new ArrayList<Integer>();
@@ -158,7 +155,7 @@ public final class Tromboter extends StateMachineGamer
 		List<Move> moves = mymachine.getLegalMoves(state, getRole());
 		int myscore = 0;
 		Move selection = moves.get(0);
-		if (mymachine.isTerminal(state)) {
+		if (System.currentTimeMillis() > finish_by || mymachine.isTerminal(state)) {
 			return mymachine.getGoal(state, getRole());
 		}
 		List<Integer> nodeScores = new ArrayList<Integer>();
