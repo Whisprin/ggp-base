@@ -69,7 +69,7 @@ public final class Player extends JPanel
 
 	private final JComboBox<String> typeComboBox;
 
-	private Integer defaultPort = 9147;
+	private Integer defaultPort = 5020;
 
 	private List<Class<? extends Gamer>> gamers = Lists.newArrayList(ProjectSearcher.GAMERS.getConcreteClasses());
 
