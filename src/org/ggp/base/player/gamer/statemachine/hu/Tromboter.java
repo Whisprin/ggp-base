@@ -1,6 +1,7 @@
 package org.ggp.base.player.gamer.statemachine.hu;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,6 +44,7 @@ public final class Tromboter extends StateMachineGamer
 
 	boolean justOneTime = true;
 	long finish_by = 0;
+	static final int maxThreads = 15;
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
@@ -75,18 +77,37 @@ public final class Tromboter extends StateMachineGamer
 
 		int depth = 100;
 		try {
+
+			int monteScores[] = new int[mymachine.getLegalJointMoves(getCurrentState()).size()];
+			Arrays.fill(monteScores, -1);
+			for (List<Move> ownMove:mymachine.getLegalJointMoves(getCurrentState())){
+				// do thread magic here
+				startMonteThread(monteScores, i, ownMove);
+			}
+
+			boolean allDone = false;
+			while (!allDone) {
+				allDone = true;
+				for (int score:monteScores) {
+					if (score == -1) {
+						allDone = false;
+					}
+				}
+			}
+
 			List<Integer> nodeScores = new ArrayList<Integer>();
 			for (List<Move> ownMove:mymachine.getLegalJointMoves(getCurrentState())){
 				try {
 					int score = new Integer(minimax(mymachine, mymachine.getNextState(getCurrentState(), ownMove), depth, false));
 					if (moves.size() != 1) {
-						GamerLogger.emitToConsole(new Integer(++i).toString() + ": " +new Integer(score).toString() + "\n");
+						GamerLogger.emitToConsole(new Integer(++i).toString() + ": " + new Integer(score).toString() + "\n");
 					}
 					nodeScores.add(score);
 				} catch (TransitionDefinitionException e) {
 					e.printStackTrace();
 				}
 			}
+
 			GamerLogger.emitToConsole("\n");
 			if (moves.size() != 1) {
 				int myscore = Collections.max(nodeScores);
