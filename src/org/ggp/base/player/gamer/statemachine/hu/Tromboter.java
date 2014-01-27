@@ -1,8 +1,6 @@
 package org.ggp.base.player.gamer.statemachine.hu;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import org.ggp.base.apps.player.detail.DetailPanel;
@@ -11,7 +9,6 @@ import org.ggp.base.player.gamer.event.GamerSelectedMoveEvent;
 import org.ggp.base.player.gamer.exception.GamePreviewException;
 import org.ggp.base.player.gamer.statemachine.StateMachineGamer;
 import org.ggp.base.util.game.Game;
-import org.ggp.base.util.logging.GamerLogger;
 import org.ggp.base.util.statemachine.MachineState;
 import org.ggp.base.util.statemachine.Move;
 import org.ggp.base.util.statemachine.StateMachine;
@@ -76,25 +73,17 @@ public final class Tromboter extends StateMachineGamer
 		int i = 0;
 
 		int depth = 100;
-		try {
 
-			int monteScores[] = new int[mymachine.getLegalJointMoves(getCurrentState()).size()];
-			Arrays.fill(monteScores, -1);
-			for (List<Move> ownMove:mymachine.getLegalJointMoves(getCurrentState())){
-				// do thread magic here
-				startMonteThread(monteScores, i, ownMove);
-			}
+		Double monteScores[];
+		monteScores = new Double[mymachine.getLegalJointMoves(getCurrentState()).size()];
+		Arrays.fill(monteScores, -1.0);
 
-			boolean allDone = false;
-			while (!allDone) {
-				allDone = true;
-				for (int score:monteScores) {
-					if (score == -1) {
-						allDone = false;
-					}
-				}
-			}
+		MCLThreadVerwalter mclVerwalter = new MCLThreadVerwalter(monteScores, mymachine, this);
 
+		mclVerwalter.start();
+
+		// in nen Thread
+		/*
 			List<Integer> nodeScores = new ArrayList<Integer>();
 			for (List<Move> ownMove:mymachine.getLegalJointMoves(getCurrentState())){
 				try {
@@ -117,12 +106,42 @@ public final class Tromboter extends StateMachineGamer
 					e.printStackTrace();
 				}
 			}
-		} catch (MoveDefinitionException e) {
-			e.printStackTrace();
-		}
+		 */
+
 
 		// We get the end time
 		// It is mandatory that stop<timeout
+
+		while(System.currentTimeMillis()<finish_by){
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		int index =0;
+		double myscore = 0;
+		for(int j=0; j < monteScores.length; j++){
+			if(monteScores[j]>myscore){
+				myscore = monteScores[j];
+				index = j;
+			}
+		}
+
+		mclVerwalter.stopMinions();
+		mclVerwalter.stopThread();
+
+		if (moves.size() != 1) {
+			try {
+				selection = mymachine.getLegalMoves(getCurrentState(), getRole()).get(index);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+
 
 		long stop = System.currentTimeMillis();
 
@@ -203,7 +222,7 @@ public final class Tromboter extends StateMachineGamer
 		}
 		return myscore;
 	}
-	*/
+	 */
 
 	private int minimax(StateMachine mymachine, MachineState state, int depth, boolean maximizingPlayer) throws GoalDefinitionException, MoveDefinitionException, TransitionDefinitionException {
 		if (depth == 0 || mymachine.isTerminal(state)) {
