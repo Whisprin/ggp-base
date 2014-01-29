@@ -1,6 +1,5 @@
 package org.ggp.base.player.gamer.statemachine.hu;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.ggp.base.apps.player.detail.DetailPanel;
@@ -42,6 +41,7 @@ public final class Tromboter extends StateMachineGamer
 	boolean justOneTime = true;
 	long finish_by = 0;
 	static final int maxThreads = 15;
+
 	@Override
 	public Move stateMachineSelectMove(long timeout) throws TransitionDefinitionException, MoveDefinitionException, GoalDefinitionException
 	{
@@ -70,15 +70,15 @@ public final class Tromboter extends StateMachineGamer
 		output.append(++i);
 		output.append("\n\n");
 		//GamerLogger.emitToConsole(output.toString());
-		int i = 0;
 
-		int depth = 100;
+		MutableDouble monteScores[];
+		monteScores = new MutableDouble[mymachine.getLegalJointMoves(getCurrentState()).size()];
 
-		Double monteScores[];
-		monteScores = new Double[mymachine.getLegalJointMoves(getCurrentState()).size()];
-		Arrays.fill(monteScores, -1.0);
+		for(int k = 0; k < monteScores.length; k++){
+			monteScores[k] = new MutableDouble(-1.0);
+		}
 
-		MCLThreadVerwalter mclVerwalter = new MCLThreadVerwalter(monteScores, mymachine, this);
+		MCLThreadVerwalter mclVerwalter = new MCLThreadVerwalter(monteScores, mymachine, this, finish_by, 14);
 
 		mclVerwalter.start();
 
@@ -121,17 +121,23 @@ public final class Tromboter extends StateMachineGamer
 			}
 		}
 
-		int index =0;
-		double myscore = 0;
-		for(int j=0; j < monteScores.length; j++){
-			if(monteScores[j]>myscore){
-				myscore = monteScores[j];
-				index = j;
-			}
-		}
-
 		mclVerwalter.stopMinions();
 		mclVerwalter.stopThread();
+
+		int index		= 0;
+		double myscore	= 0;
+
+		for(int j=0; j < monteScores.length; j++){
+			if(monteScores[j].get()>myscore){
+				myscore = monteScores[j].get();
+				index = j;
+			}
+
+			System.out.print(monteScores[j].get()+" ");
+
+		}
+
+		System.out.println();
 
 		if (moves.size() != 1) {
 			try {

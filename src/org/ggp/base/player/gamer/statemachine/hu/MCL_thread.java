@@ -12,11 +12,11 @@ public class MCL_thread extends Thread
 
 	Tromboter player;
 	StateMachine mymachine;
-	double i;
+	MutableDouble i;
 	MachineState state;
 	boolean run = true;
 
-  MCL_thread(double i, StateMachine mymachine, MachineState state, Tromboter player){
+  MCL_thread(MutableDouble i, StateMachine mymachine, MachineState state, Tromboter player){
     super();
 
     // initalize parameters
@@ -44,8 +44,7 @@ public class MCL_thread extends Thread
 		  }
 
 		  // write monteZott's return value in too the array or determine average
-		  i = ((double)value)/times;
-
+		  i.set(((double)value)/times);
 	  }
 
       //exit run => close thread

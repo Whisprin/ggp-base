@@ -14,16 +14,21 @@ public class MCLThreadVerwalter extends Thread {
 	Tromboter player;
 	MachineState state;
 	StateMachine mymachine;
-	ArrayList<MCL_thread> threads;
-	Double[] scores;
+	ArrayList<MCL_thread> threads = new ArrayList<MCL_thread>();
+	MutableDouble[] scores;
 	boolean run = true;
 
-	MCLThreadVerwalter(Double[] scores, StateMachine mymachine, Tromboter player){
+	long timeout;
+	int  numberOfThreads;
+
+	MCLThreadVerwalter(MutableDouble[] scores, StateMachine mymachine, Tromboter player, long timeout, int numberOfThreads){
 		super();
 
 		this.mymachine = mymachine;
 		this.player = player;
 		this.scores = scores;
+		this.timeout = timeout;
+		this.numberOfThreads = numberOfThreads;
 
 		state = player.getCurrentState();
 	}
@@ -32,32 +37,53 @@ public class MCLThreadVerwalter extends Thread {
 
 		try {
 
-		int i = 0;
-		for (List<Move> ownMove:mymachine.getLegalJointMoves(player.getCurrentState())){
-			// do thread magic here
-			MCL_thread t = new MCL_thread( scores[i], mymachine,mymachine.getNextState(state, ownMove), player);
-			t.start();
-			threads.add(t);
-			i++;
+		long timeframe = timeout - System.currentTimeMillis();
+
+		if(scores.length < numberOfThreads){
+			numberOfThreads = scores.length;
 		}
 
-		} catch (MoveDefinitionException | TransitionDefinitionException e) {
+		// Zeitspanne / (#Moves / #Threads)
+		long threadRunTime = timeframe / (long)Math.ceil((double)(scores.length)/numberOfThreads);
+
+		List<List<Move>> ownMoves = mymachine.getLegalJointMoves(player.getCurrentState());
+
+		for(int j=1; j <= Math.ceil((double)(scores.length)/numberOfThreads); j++){
+
+			System.out.println(j);
+
+			for(int k = 0; k < numberOfThreads; k++)
+			{
+				int index = ((j-1)*numberOfThreads+k)%scores.length;
+				MCL_thread t = new MCL_thread( scores[index], mymachine,mymachine.getNextState(state, ownMoves.get(index)), player);
+				t.start();
+				threads.add(t);
+			}
+
+			long time = System.currentTimeMillis();
+
+			while(((System.currentTimeMillis() - time) < threadRunTime) && run){
+				// pfui
+				Thread.sleep(threadRunTime/10);
+			}
+
+			for(MCL_thread t : threads){
+				t.stopThread();
+			}
+
+			while(!threads.isEmpty()){
+				threads.get(0).join();
+				threads.remove(0);
+			}
+
+			if(!run) return;
+
+		}
+
+		} catch (MoveDefinitionException | TransitionDefinitionException | InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-
-		// thread verwaltung
-		/*boolean allDone = false;
-		while (!allDone) {
-			allDone = true;
-			for (double score:scores) {
-				if (score == -1) {
-					allDone = false;
-				}
-			}
-		}*/
-		while(run);
-
 
 	}
 
